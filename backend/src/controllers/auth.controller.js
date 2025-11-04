@@ -2,7 +2,7 @@ import { sendWelcomeEmail } from "../services/emailHandlers.js";
 import { generateToken } from "../config/utils.js";
 import User from "../models/user.model.js";
 import bcrypt from "bcryptjs";
-import "dotenv/config";
+import { ENV } from "../config/index.js";
 
 export const signup = async (req,res) => {
     const {fullName, email, password} = req.body
@@ -45,7 +45,7 @@ export const signup = async (req,res) => {
             })
 
             try {
-                await sendWelcomeEmail(savedUser.email, savedUser.fullName, process.env.CLIENT_URL);    
+                await sendWelcomeEmail(savedUser.email, savedUser.fullName, ENV.CLIENT_URL);    
             } catch (error) {
                 console.log("Failed to send welcome email:", error);
             }
@@ -57,4 +57,32 @@ export const signup = async (req,res) => {
         console.log("Error in signup controller");
         res.status(500).json({message:"Internal server error"})
     }
+};
+
+export const login = async (req,res) => {
+    const {email, password} = req.body
+
+    try {
+        const user = await User.findOne({email:email});
+        if (!user) return res.status(400).json({message:"Invalid Email or Password"})
+
+        const isPasswordCorrect = await bcrypt.compare(password, user.password);
+        if (!isPasswordCorrect) return res.status(400).json({message:"Invalid Email or Password"})
+
+        generateToken(user._id, res);
+
+        res.status(200).json({
+            _id: user._id,
+            fullName: user.fullName,
+            email: user.email,
+            profilePic: user.profilePic,
+        })
+    } catch (error) {
+        console.log("Error in login controller");
+        res.status(500).json({message:"Internal server error"})
+    };
+
+export const logout = (_, res) => {
+        res.cookies("jwt","", {maxAge:0});
+        res.status(200).json({message:"Logged out successfully"});
 };
