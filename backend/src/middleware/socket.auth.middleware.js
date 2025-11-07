@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 import User from "../models/user.model.js";
-import { ENV } from "../cofig/index.js";
+import { ENV } from "../config/index.js";
 
 export const socketAuthMiddleware = async (socket, next) => {
     try {
